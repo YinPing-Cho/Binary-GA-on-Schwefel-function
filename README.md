@@ -1,0 +1,1 @@
+A bare-bone implementation of binary genetic algorithm with the fitness function being a multi-dimensional Schwefel function with each x in range (-512, 512). Parameters of the GA can be modified in Class.h, and execution parameters are set in main.cpp.
