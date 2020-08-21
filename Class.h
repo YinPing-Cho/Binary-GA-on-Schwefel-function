@@ -6,11 +6,11 @@
 #include <iostream>
 #include <vector>
 #include <chrono>
-#include <numeric>
-#define N 1000
-#define nP 9.0
-#define M 0.1
-#define L 0.55
+#include <numeric> 
+#define N 100 //number of parents
+#define nP 9.0 //maximum size of populatioin
+#define M 0.1 //mutation rate
+#define D 10 //dimension of Schwefel function
 using namespace std;
 
 struct Fitness_Alias {
@@ -18,67 +18,65 @@ struct Fitness_Alias {
     unsigned alias;
 };
 
-class I_GA {
+class B_GA {
     private:
-        vector<int> pointlist;
-        unsigned int listsize;
-        unsigned int pointrand() {
-            int i = rand() % listsize;
-            return pointlist[i];
-        }
-        void copyChromosone(int (&arr_dest)[100], int (&arr_source)[100]);
+        void copyArray(bool (&arr1)[10], bool (&arr2)[10]);
+        void copyChromosone(bool (&arr1)[D][10], bool (&arr2)[D][10]);
+        //unsigned times = 0;
+
+        template <class T>
+        void swap(T *a, T *b);
         void randomize(unsigned arr[], int n); //Yates-Fischer
-        int generate();
-        int b_chromosone[N][100];
-        int pool[(int)((1+nP)*N)][100];
+        bool generate();
+        bool b_chromosone[N][D][10];
+        int int_pool[(int)((1+nP)*N)][D];
+        bool pool[(int)((1+nP)*N)][D][10];
         vector<Fitness_Alias> alias_best;
         vector<float> logger;
         float fitness[(int)((1+nP)*N)];
+        void B2Int();
 
-        void ArithmeticCrossover2pool(int arr1[100], int arr2[100], unsigned index);
+        //void TwoPCrossover2pool(bool arr1[10][10], bool arr2[10][10], unsigned pos1, unsigned pos2, unsigned index);
+        void TwoPCrossover2pool(bool (&arr_dest)[D][10], bool (&arr_s1)[D][10], bool (&arr_s2)[D][10], unsigned pos1, unsigned pos2);
         void brew();
         void mutate();
         void storeFittest();
+        unsigned map[D];
         vector<double> averageLogger;
         vector<double> timeLogger;
 
     public:
-        I_GA() {
+        B_GA() {
             srand (time(NULL));
             for (unsigned int i = 0; i < N; ++i) {
-                for (unsigned int j = 0; j < 100; ++j) {
-                    b_chromosone[i][j] = generate();
-                    
-                    //cout << b_chromosone[i][j][k] << " ";
-                }
-            }
-
-            for (unsigned int k = 1; k < N; ++k) {
-                if ((int)(N-10*k) > 0) {
-                    for (unsigned int l = 0; l < (unsigned int)(N-10*k)*(N-10*k); ++l) {
-                    pointlist.push_back(k);
+                for (unsigned int j = 0; j < D; ++j) {
+                    for (unsigned int k = 0; k < 10; ++k) {
+                        b_chromosone[i][j][k] = generate();
+                        //cout << b_chromosone[i][j][k] << " ";
                     }
                 }
-                else pointlist.push_back(k);
             }
-            listsize = pointlist.size();
-
+            for (unsigned i = 0; i < D; ++i) {
+                map[i] = i;
+            }
             logger.push_back(INT32_MAX);
         };
         void reinitialize() {
             for (unsigned int i = 0; i < N; ++i) {
-                for (unsigned int j = 0; j < 100; ++j) {
-                    b_chromosone[i][j] = generate();
-                    //cout << b_chromosone[i][j][k] << " ";
+                for (unsigned int j = 0; j < D; ++j) {
+                    for (unsigned int k = 0; k < 10; ++k) {
+                        b_chromosone[i][j][k] = generate();
+                        //cout << b_chromosone[i][j][k] << " ";
+                    }
                 }
             }
-            logger.clear();
         }
         void search(unsigned times) {
             auto t1 = std::chrono::high_resolution_clock::now();
             for (unsigned i = 0; i < times; ++i) {
                 brew();
                 mutate();
+                B2Int();
                 storeFittest();
                 //inference();
             }
@@ -86,10 +84,12 @@ class I_GA {
             auto duration = std::chrono::duration_cast<std::chrono::microseconds>( t2 - t1 ).count();
             //std::cout << "***Execution time: " << duration <<  " micro seconds." << '\n';
             //cout << "Final cost: " << logger.back() << '\n';
+            //times++;
+            //cout << "Run " << times << " cplt. ";
             averageLogger.push_back(logger.back());
             timeLogger.push_back(duration);
-            //cout << "Average cost: " << averageLogger.back() << '\n';
         }
+
         void showOutput() {
             cout << "Average cost: " << avg1(averageLogger) << '\n';
             cout << "Average time: " << avg1(timeLogger)/1000000 << " sec." << '\n';
@@ -104,21 +104,26 @@ class I_GA {
             return average;
         }
 
-        float SCH(int input[100]);
+        float SCH(int input[10]);
         void inference() {
-            //prpool();
+            print_B0();
+            //print_pool();
             brew();
-            prpool0();
+            print_pool0();
             mutate();
-            prpool0();
-            prpool18();
+            B2Int();
+            print_Int0();
+            print_pool0();
+            print_pool18();
             storeFittest();
+            print_B0();
             print_AliasBest();
             cout << '\n';
         }
+        void print_B0();
         void print_Int0();
-        void prpool0();
-        void prpool18();
+        void print_pool0();
+        void print_pool18();
         void print_AliasBest();
         void output_csv();
 };
